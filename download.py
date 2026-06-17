@@ -4,17 +4,20 @@ import shutil
 import threading
 import time
 from pathlib import Path
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 
 N = 4
 
+BASE_URL = "https://ftp.ebi.ac.uk/empiar/world_availability/12870/data/RAW_Tif/"
 INPUT = Path("tif.json")
-SOURCE_DIR = Path("raw_tif")
 TMP_DIR = Path("tmp")
 TIFS_DIR = Path("tifs")
 RESULT_DIR = Path("result")
 WAIT_SECONDS = 10
 MAX_TIFS = 40
+CHUNK_SIZE = 1024 * 1024
 CAPACITY_LOCK = threading.Lock()
 
 
@@ -35,6 +38,10 @@ def has_result(stem):
     return any(path.is_file() and path.stem.startswith(stem) for path in RESULT_DIR.iterdir())
 
 
+def file_url(filename):
+    return BASE_URL + quote(filename)
+
+
 def wait_for_capacity():
     while True:
         tif_count = sum(
@@ -50,16 +57,22 @@ def wait_for_capacity():
 
 
 def download_to_tmp(filename, thread_id):
-    source_path = SOURCE_DIR / filename
     tmp_path = TMP_DIR / f"thread-{thread_id}-{filename}"
+    part_path = tmp_path.with_name(tmp_path.name + ".part")
 
     while True:
         try:
-            if not source_path.exists():
-                raise FileNotFoundError(f"source tif not found: {source_path}")
-            shutil.copy2(source_path, tmp_path)
+            request = Request(
+                file_url(filename),
+                headers={"User-Agent": "mk6420-tif-downloader/1.0"},
+            )
+            with urlopen(request, timeout=60) as response, part_path.open("wb") as output:
+                shutil.copyfileobj(response, output, length=CHUNK_SIZE)
+
+            part_path.replace(tmp_path)
             return tmp_path
         except Exception as exc:
+            part_path.unlink(missing_ok=True)
             print(f"thread {thread_id}: failed to download {filename}: {exc}; retrying")
             time.sleep(WAIT_SECONDS)
 
@@ -73,6 +86,7 @@ def worker(thread_id, filenames):
             print(f"thread {thread_id}: skipping completed {stem}")
             continue
 
+        wait_for_capacity()
         tmp_path = download_to_tmp(filename, thread_id)
         target_path = TIFS_DIR / tif_path.name
         with CAPACITY_LOCK:
