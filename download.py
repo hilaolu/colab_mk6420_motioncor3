@@ -105,6 +105,7 @@ def main():
     RESULT_DIR.mkdir(exist_ok=True)
 
     filenames = load_filenames()
+    filenames = filenames[:400]
     threads = []
     for thread_id in range(N):
         thread_filenames = [
