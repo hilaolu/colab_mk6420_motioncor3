@@ -1,0 +1,22 @@
+write download.py, with an global variable N at top. 
+the download will read tif.json and spawn N threads. for each thread i in N,
+
+1) pick all tif whose index%N=i  
+2) for each tif name(without extension), check whether the name is in result folder
+3) repeat poll file count in tifs folder, sleep 10s if count > 40
+4) for name not in result, download to tmp folder. retry on exception.
+5) copy the tif to tifs folder
+6) continue to next iteration
+
+
+write motioncor.py, refer to run.py.
+
+
+
+while(True)
+1) poll file list in tifs folder, sleep if not found
+2) motioncor the tif, set output folder to out 
+3) copy file ends with _DW.mrc and .txt to result, rm other files 
+
+
+
