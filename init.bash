@@ -9,5 +9,6 @@ sed -i 's/@$(NVCC) -g -G -m64 $(OBJS)/@$(NVCC) -g -G -m64 -Xlinker -no-pie $(OBJ
 make exe -f makefile11 CUDAHOME=/usr/local/cuda
 
 
+cd ..
 
 curl -L -O ftp://ftp.ebi.ac.uk/empiar/world_availability/12870/data/RAW_Tif/K319040035GainRefx1m3kv300.mrc

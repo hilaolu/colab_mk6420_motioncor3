@@ -49,6 +49,8 @@ def run_motioncor3(tif_path):
         "300",
         "-Gpu",
         "0",
+        "-OutStar",
+        "1",
         "-FtBin",
         "2.00",
     ]
@@ -80,6 +82,11 @@ def cleanup_after_run(output_path):
 
     for path in output_path.parent.glob(f"{output_path.stem}*"):
         if path == keep_path:
+            continue
+
+        s=str(path)
+
+        if s.endswith("txt") or s.endswith("star"):
             continue
         if path.is_file():
             path.unlink()
